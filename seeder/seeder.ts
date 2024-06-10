@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Room from '../backend/models/room';
+import Room from '@/backend/models/room';
 import { rooms } from "./data";
 // require('dotenv').config({path: 'next.config.mjs'});
 

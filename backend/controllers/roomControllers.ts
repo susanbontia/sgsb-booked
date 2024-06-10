@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import Room from "../models/room";
+import Room from "@/backend/models/room";
 import mongoose from 'mongoose';
+import  ErrorHandler  from "@/backend/utils/errorHandler";
+import catchAsynErrors from "@/backend/middlewares/catchAsyncErrors";
 
 //Get all rooms => /api/rooms
-export const allRooms = async(req: NextRequest) => {
+export const allRooms = catchAsynErrors(async(req: NextRequest) => {
     const rooms = await Room.find();
     const resPerPage: number = 8;
 
@@ -12,10 +14,12 @@ export const allRooms = async(req: NextRequest) => {
        resPerPage,
        rooms,
     });
-}
+});
 
-//Create new room => /api/rooms
-export const newRoom = async (req: NextRequest) => {
+//Create new room => /api/admin/rooms
+export const newRoom = catchAsynErrors(
+    async (req: NextRequest) => {
+
     const body = await req.json();
     const room = await Room.create(body);
 
@@ -23,75 +27,59 @@ export const newRoom = async (req: NextRequest) => {
         success: true,
         room,
     });
-}
+});
 
 //Get room details => /api/rooms/:id
-export const getRoomDetails = async(
-    req: NextRequest,
-    { params }: {params: {id: string}}) => {
+export const getRoomDetails = catchAsynErrors(
+    async(req: NextRequest, { params }: {params: {id: string}}) => {
 
-    const { ObjectId } = mongoose.Types;
-
-    // Check if the ID is valid and has 24 characters
-    if (!ObjectId.isValid(params.id) || params.id.length !== 24) {
-        return NextResponse.json(
-            { message: "Room not found" },
-            { status: 400 }
-        );
-    }
-
-    // Convert string ID to ObjectId
-    const objectId = new ObjectId(params.id);
-
-    // Query the room with the valid ObjectId
-    const room = await Room.findById(objectId);
+    const room = await Room.findById(params.id);
 
     if(!room) {
-        return NextResponse.json(
-            { message: "Room not found" },
-            { status: 404 }
-        );
+        throw new ErrorHandler("Room not found", 404);
     }
 
     return NextResponse.json({
         success: true,
         room,
     });
-};
 
-//Update room details => /api/rooms/:id
-export const updateRoom = async(
-    req: NextRequest,
-    { params }: {params: {id: string}}) => {
+});
 
-    const { ObjectId } = mongoose.Types;
+//Update room details => /api/admin/rooms/:id
+export const updateRoom = catchAsynErrors(
+    async(req: NextRequest, { params }: {params: {id: string}}) => {
 
-    // Check if the ID is valid and has 24 characters
-    if (!ObjectId.isValid(params.id) || params.id.length !== 24) {
-        return NextResponse.json(
-            { message: "Room not found" },
-            { status: 400 }
-        );
-    }
-
-    // Convert string ID to ObjectId
-    const objectId = new ObjectId(params.id);
-
-    // Query the room with the valid ObjectId
-    let room = await Room.findById(objectId);
+    let room = await Room.findById(params.id);
     const body = await req.json();
 
     if(!room) {
-        return NextResponse.json(
-            { message: "Room not found" },
-            { status: 404 }
-        );
+        throw new ErrorHandler("Room not found", 404);
     }
 
-    room = await Room.findByIdAndUpdate(objectId, body, { new: true, })
+    room = await Room.findByIdAndUpdate(params.id, body, { new: true, })
 
     return NextResponse.json({
         success: true,
         room,
     });
-};
+});
+
+
+//Delete room details => /api/admin/rooms/:id
+export const deleteRoom = catchAsynErrors(
+    async(req: NextRequest, { params }: {params: {id: string}}) => {
+
+    let room = await Room.findById(params.id);
+   
+    if(!room) {
+        throw new ErrorHandler("Room not found", 404);
+    }
+
+    //TODO - Delete images associated with the room
+    room = await Room.deleteOne();
+
+    return NextResponse.json({
+        success: true,
+    });
+});
