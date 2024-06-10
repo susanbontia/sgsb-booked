@@ -1,16 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import Room from "@/backend/models/room";
-import mongoose from 'mongoose';
-import  ErrorHandler  from "@/backend/utils/errorHandler";
+import Room, { IRoom } from "@/backend/models/room";
+import ErrorHandler  from "@/backend/utils/errorHandler";
 import catchAsynErrors from "@/backend/middlewares/catchAsyncErrors";
+import APIFilters from "@/backend/utils/apiFilters";
 
 //Get all rooms => /api/rooms
 export const allRooms = catchAsynErrors(async(req: NextRequest) => {
-    const rooms = await Room.find();
-    const resPerPage: number = 8;
+    
+    const resPerPage: number = 4;
+    // const rooms = await Room.find();
+
+    const { searchParams } = new URL(req.url);
+    
+    const queryStr: any = {};
+    const roomsCount: number = await Room.countDocuments();
+
+    searchParams.forEach((value, key) => {
+        queryStr[key] = value;
+    });
+
+    const apiFilters = new APIFilters(Room, queryStr).search().filter();
+    
+    let rooms: IRoom[] = await apiFilters.query;
+    const filteredRoomsCount: number = rooms.length;
+
+    apiFilters.pagination(resPerPage);
+    rooms = await apiFilters.query.clone();
 
     return NextResponse.json({
        success: true,
+       roomsCount,
+       filteredRoomsCount,
        resPerPage,
        rooms,
     });

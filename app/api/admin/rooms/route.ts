@@ -1,6 +1,6 @@
 import { createEdgeRouter } from "next-connect";
 import { NextRequest } from "next/server";
-import { newRoom, createRoom } from "@/backend/controllers/roomControllers";
+import { newRoom } from "@/backend/controllers/roomControllers";
 import dbConnect from "@/backend/config/dbConnect";
 
 interface RequestContext {}
